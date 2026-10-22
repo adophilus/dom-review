@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "Widget Review",
+  "version": "2.0.0",
+  "description": "Visual code review for live UI — leave comments on DOM elements for AI agents",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
+  "optional_host_permissions": ["http://*/*"],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost/*", "http://127.0.0.1/*"],
+      "js": ["content/modules/framework-bridge.js", "content/modules/agent-api-bridge.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["http://localhost/*", "http://127.0.0.1/*"],
+      "js": [
+        "content/modules/review-store.js",
+        "content/modules/selector-generator.js",
+        "content/modules/framework-detector.js",
+        "content/modules/context-capture.js",
+        "content/modules/shadow-ui.js",
+        "content/modules/comment-panel.js",
+        "content/modules/badges.js",
+        "content/modules/sidebar.js",
+        "content/modules/selector-mode.js",
+        "content/modules/export-import.js",
+        "content/modules/agent-api-handler.js",
+        "content/content-script.js"
+      ],
+      "css": ["content/content-style.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}
