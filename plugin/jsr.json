@@ -1,0 +1,16 @@
+{
+  "name": "@adophilus/dom-review",
+  "version": "1.0.0",
+  "exports": "./index.js",
+  "publish": {
+    "include": [
+      "index.js",
+      "bundle.js",
+      "build.mjs",
+      "dist/",
+      "README.md",
+      "LICENSE",
+      "index.d.ts"
+    ]
+  }
+}

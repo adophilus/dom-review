@@ -1,0 +1,23 @@
+/**
+ * Widget Review — page-level styles for the selection overlay.
+ *
+ * These attributes are set on HOST PAGE elements (see selector-mode.js),
+ * so they must live in page CSS, not the extension's shadow root.
+ * Colors match the widget_review design tokens (review_theme.dart).
+ */
+
+/* Hover during select mode: 2px accent outline + subtle fill */
+[data-dom-review-hover] {
+  outline: 2px solid #4f8cff !important;
+  outline-offset: -2px !important;
+  background-color: rgba(79, 140, 255, 0.08) !important;
+}
+
+/* Committed selection while the comment card is open: stronger */
+[data-dom-review-selected] {
+  outline: 2px solid #4f8cff !important;
+  outline-offset: -2px !important;
+  background-color: rgba(79, 140, 255, 0.16) !important;
+  box-shadow: 0 0 0 4px rgba(79, 140, 255, 0.25) !important;
+  cursor: default;
+}

@@ -3,5 +3,13 @@
   "version": "1.0.0",
   "description": "Auto-injects the Widget Review visual code-review UI into a Vite dev server",
   "type": "module",
-  "main": "index.js"
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "jsr": "^0.14.3"
+  },
+  "types": "index.d.ts"
 }
