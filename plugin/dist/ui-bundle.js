@@ -318,6 +318,7 @@
   }
 
   window.__domReviewAPI = {
+    __wrOwner: EVENT_NAME,
     version: '1.0',
 
     /** Get all reviews for current page */
@@ -3196,15 +3197,18 @@
 
 
 (function(){
-  /* Keep the agent contract owned by this instance: an old DOM Review
-     extension co-residing on localhost re-registers window.__domReviewAPI
-     at document_idle — which on slow-loading apps can land well after this
-     script. Re-claim forever (1s cadence, no-op when already owned; the
-     interval only matters while an old extension co-resides). */
+  /* Ownership guard for the agent contract: if some other tool assigns a
+     foreign bridge to window.__domReviewAPI (e.g. an old DOM Review
+     extension co-residing on localhost), the setter silently ignores it.
+     With no competitor installed this never fires. */
   var mine = window.__domReviewAPI;
-  if (!mine) return;
-  setInterval(function(){
-    if (window.__domReviewAPI !== mine) window.__domReviewAPI = mine;
-  }, 1000);
+  if (!mine || mine.__wrOwner !== window.__WR_API_EVENT) return;
+  try {
+    Object.defineProperty(window, '__domReviewAPI', {
+      configurable: true,
+      get: function() { return mine; },
+      set: function() { /* foreign bridges cannot take the contract */ }
+    });
+  } catch (e) { /* keep the plain property; worst case a competitor wins */ }
 })();
 

@@ -42,6 +42,7 @@
   }
 
   window.__domReviewAPI = {
+    __wrOwner: EVENT_NAME,
     version: '1.0',
 
     /** Get all reviews for current page */
