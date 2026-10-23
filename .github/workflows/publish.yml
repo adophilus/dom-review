@@ -1,0 +1,22 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node plugin/build.mjs
+      - name: Publish to JSR
+        run: npx jsr publish --quiet
+        working-directory: plugin
