@@ -8,17 +8,30 @@ Tap any element on your dev site, leave a comment with a category and priority,
 and your AI agent reads it live and fixes it — same workflow, same agent API,
 compact dark chrome that stays out of your way.
 
-## Install
+## Two ways to run it
 
-1. `chrome://extensions` → enable **Developer mode**
-2. **Load unpacked** → select `extension/`
-3. Disable the old DOM Review extension (this replaces it)
-4. Open your dev site (`http://localhost` / `http://127.0.0.1` by default — add
-   other origins from the popup)
+**1. Chrome extension** — `chrome://extensions` → Developer mode → **Load
+unpacked** → `extension/`. Disable the old DOM Review extension (this
+replaces it). Reviews persist per-extension; old ones can be migrated via
+Export → Import.
 
-**Migrating reviews:** reviews live in per-extension storage, so old reviews
-don't carry over automatically. In old DOM Review: **Export** → in Widget
-Review: **Reviews → ⋯ → Import**.
+**2. Vite plugin (dev-only)** — injects the same review UI into any Vite dev
+server, no extension needed. The UI modules are shared: one source
+(`extension/content/modules`), two delivery paths.
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import domReview from './plugin/index.js'
+
+export default defineConfig({ plugins: [react(), domReview()] })
+```
+
+`domReview({ enabled: false })` turns it off. Dev-only (`apply:
+'serve'`) — like widget_review's `kDebugMode` on the Flutter side. Agent
+contract (`window.__domReviewAPI`, `#dom-review-data`) identical, so the
+same AI workflow applies.
 
 ## Using it
 
@@ -61,13 +74,16 @@ MCP setups keep working:
 
 ## Demo / test target
 
-`demo/index.html` — a deliberately busy admin dashboard (deep chains, dynamic
-lists, tables, forms, contenteditable, its own `d`-toggles-theme shortcut, an
-open-shadow-root corner case). Serve it and point the extension at it:
+`demo/` — a Vite + React port of a deliberately busy admin dashboard (deep
+chains, dynamic lists, tables, forms, contenteditable, its own
+`d`-toggles-theme shortcut, an open-shadow-root corner case):
 
 ```
-python3 -m http.server 8123 --bind 127.0.0.1 --directory demo
+cd demo && npm install && npm run dev   # http://localhost:5175
 ```
+
+The dom-review plugin is wired into its `vite.config.js`, so the review
+UI auto-injects on load.
 
 ## Layout
 

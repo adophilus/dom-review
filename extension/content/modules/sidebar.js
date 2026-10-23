@@ -244,22 +244,29 @@
 
     container.querySelector('#wr-sidebar-more').addEventListener('click', (e) => {
       const resolvedCount = store.getAll().filter(r => r.resolved).length;
-      window.__domReview.ui.openMenu(e.currentTarget, [
+      window.__domReview.ui.toggleMenu(e.currentTarget, [
         { icon: 'export', label: 'Export JSON', onClick: () => exportImport.exportJSON() },
         { icon: 'import', label: 'Import JSON…', onClick: () => exportImport.importJSON() },
         {
-          icon: 'clear', label: 'Clear resolved', danger: resolvedCount > 0, onClick: () => {
+          icon: 'clear', label: 'Clear resolved', danger: resolvedCount > 0, keepOpen: true, onClick: (btn) => {
             if (resolvedCount === 0) return;
-            if (confirm(`Clear resolved reviews? This permanently deletes ${resolvedCount} resolved review${resolvedCount === 1 ? '' : 's'}.`)) {
+            // Two-step confirm in-menu: window.confirm would freeze the page
+            // behind an easy-to-miss native dialog.
+            if (btn.dataset.armed) {
               store.getAll().filter(r => r.resolved).forEach(r => store.remove(r.id));
+              window.__domReview.ui.closeMenu();
+              return;
             }
+            btn.dataset.armed = '1';
+            btn.classList.add('is-armed');
+            btn.children[1].textContent = `Delete ${resolvedCount} resolved?`;
           },
         },
       ]);
     });
 
     container.querySelector('#wr-sidebar-sort').addEventListener('click', (e) => {
-      window.__domReview.ui.openMenu(e.currentTarget, [
+      window.__domReview.ui.toggleMenu(e.currentTarget, [
         { label: 'Sort by newest', checked: currentSort === 'newest', onClick: () => { currentSort = 'newest'; render(); } },
         { label: 'Sort by oldest', checked: currentSort === 'oldest', onClick: () => { currentSort = 'oldest'; render(); } },
         { label: 'Sort by priority', checked: currentSort === 'priority', onClick: () => { currentSort = 'priority'; render(); } },
@@ -309,7 +316,7 @@
 
   function openTileMenu(anchor, id) {
     const { store, commentPanel } = window.__domReview;
-    window.__domReview.ui.openMenu(anchor, [
+    window.__domReview.ui.toggleMenu(anchor, [
       { icon: 'locate', label: 'Show on screen', onClick: () => locate(id) },
       {
         icon: 'edit', label: 'Edit', onClick: () => {
@@ -318,8 +325,17 @@
         },
       },
       {
-        icon: 'delete', label: 'Delete', danger: true, onClick: () => {
-          if (confirm('Delete this review?')) store.remove(id);
+        icon: 'delete', label: 'Delete', danger: true, keepOpen: true, onClick: (btn) => {
+          // Two-step confirm: first click arms (red, "Confirm delete?"),
+          // second click deletes. Click elsewhere / Esc disarms.
+          if (btn.dataset.armed) {
+            store.remove(id);
+            window.__domReview.ui.closeMenu();
+            return;
+          }
+          btn.dataset.armed = '1';
+          btn.classList.add('is-armed');
+          btn.children[1].textContent = 'Confirm delete?';
         },
       },
     ]);
@@ -362,6 +378,7 @@
     const container = getContainer();
     if (!container) return;
     visible = false;
+    window.__domReview.ui.closeMenu();
     container.classList.add('wr-hidden');
     focusedId = null;
     if (escapeOff) { escapeOff(); escapeOff = null; }

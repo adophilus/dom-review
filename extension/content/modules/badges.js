@@ -86,16 +86,18 @@
     try {
       const target = document.querySelector(review.selector);
       if (!target) {
-        badgeEl.style.display = 'none';
+        badgeEl.style.visibility = 'hidden';
         return;
       }
       const rect = target.getBoundingClientRect();
-      // Position at top-right corner of element
-      badgeEl.style.display = '';
+      // Position at top-right corner of element. (visibility, NOT display —
+      // display='' would wipe the badge's inline `display: inline-flex` and
+      // leave it as an uncentered block.)
+      badgeEl.style.visibility = 'visible';
       badgeEl.style.left = `${rect.right - 11}px`;
       badgeEl.style.top = `${rect.top - 11}px`;
     } catch {
-      badgeEl.style.display = 'none';
+      badgeEl.style.visibility = 'hidden';
     }
   }
 

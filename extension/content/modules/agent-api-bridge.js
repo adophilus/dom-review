@@ -17,7 +17,7 @@
 
   var REQUEST_ATTR = 'data-dr-api-request';
   var RESPONSE_ATTR = 'data-dr-api-response';
-  var EVENT_NAME = 'dr-api-request';
+  var EVENT_NAME = window.__WR_API_EVENT || 'dr-api-request';
   var counter = 0;
 
   function call(method, params) {

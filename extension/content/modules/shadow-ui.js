@@ -261,6 +261,8 @@
     .wr-menu-item .wr-mi-check { margin-left: auto; color: var(--wr-accent); width: 15px; }
     .wr-menu-item.is-danger { color: var(--wr-high); }
     .wr-menu-item.is-danger .wr-mi-icon { color: var(--wr-high); }
+    .wr-menu-item.is-armed { background: var(--wr-high); color: #fff; }
+    .wr-menu-item.is-armed .wr-mi-icon { color: #fff; }
 
     /* === Path bar (tap-to-widen ancestors) === */
     .wr-comment-top {
@@ -546,7 +548,7 @@
       const startX = e.clientX;
       const startY = e.clientY;
       let moved = false;
-      el.setPointerCapture(e.pointerId);
+      try { el.setPointerCapture(e.pointerId); } catch { /* synthetic/lost pointer */ }
       const onMove = (ev) => {
         if (!dragging) return;
         moved = true;
@@ -556,19 +558,15 @@
         dragging = false;
         window.removeEventListener('pointerup', onUp, true);
         window.removeEventListener('pointercancel', onUp, true);
-        el.removeEventListener('pointermove', onMove);
-        el.removeEventListener('pointerup', onUp);
-        el.removeEventListener('pointercancel', onUp);
+        window.removeEventListener('pointermove', onMove);
         if (moved && persist) persist();
       };
-      // Watchdogs: an interrupted drag (lost capture, alt-tab, cancel) must
-      // never leave onMove attached — a stale onMove drags the toolbar on
-      // mere hover.
+      // Listen on window: with pointer capture the events bubble here from
+      // the handle; if capture is lost mid-drag they still arrive from
+      // wherever the cursor is, so the drag never freezes.
       window.addEventListener('pointerup', onUp, true);
       window.addEventListener('pointercancel', onUp, true);
-      el.addEventListener('pointermove', onMove);
-      el.addEventListener('pointerup', onUp);
-      el.addEventListener('pointercancel', onUp);
+      window.addEventListener('pointermove', onMove);
     });
   }
 
@@ -603,7 +601,7 @@
     toolbar.querySelector('#wr-btn-select').addEventListener('click', () => { if (ui._onSelect) ui._onSelect(); });
     toolbar.querySelector('#wr-btn-reviews').addEventListener('click', () => { if (ui._onReviews) ui._onReviews(); });
     toolbar.querySelector('#wr-btn-more').addEventListener('click', (e) => {
-      openMenu(e.currentTarget, [
+      toggleMenu(e.currentTarget, [
         { icon: 'export', label: 'Export JSON', onClick: () => { if (ui._onExport) ui._onExport(); } },
         { icon: 'import', label: 'Import JSON', onClick: () => { if (ui._onImport) ui._onImport(); } },
       ]);
@@ -621,19 +619,32 @@
 
   // --- Popup menu helper ---
   let openMenuEl = null;
+  let menuAnchor = null;
   let menuOutside = null;
+  let menuOutsideInside = null;
   let menuEscapeOff = null;
 
   function closeMenu() {
     if (openMenuEl) {
       openMenuEl.remove();
       openMenuEl = null;
+      menuAnchor = null;
     }
     if (menuOutside) {
       document.removeEventListener('pointerdown', menuOutside, true);
       menuOutside = null;
     }
+    if (menuOutsideInside) {
+      shadow.removeEventListener('pointerdown', menuOutsideInside, true);
+      menuOutsideInside = null;
+    }
     if (menuEscapeOff) { menuEscapeOff(); menuEscapeOff = null; }
+  }
+
+  /** Re-clicking the same anchor closes the menu; otherwise opens. */
+  function toggleMenu(anchor, items) {
+    if (openMenuEl && menuAnchor === anchor) { closeMenu(); return; }
+    openMenu(anchor, items);
   }
 
   /**
@@ -653,11 +664,15 @@
         <span>${it.label}</span>
         ${it.checked ? `<span class="wr-mi-check">${icon('resolve', 15)}</span>` : ''}
       `;
-      btn.addEventListener('click', () => { closeMenu(); try { it.onClick(); } catch (e) { console.warn('[Widget Review] menu action error:', e); } });
+      btn.addEventListener('click', () => {
+        if (!it.keepOpen) closeMenu();
+        try { it.onClick(btn); } catch (e) { console.warn('[Widget Review] menu action error:', e); }
+      });
       menu.appendChild(btn);
     });
     shadow.appendChild(menu);
     openMenuEl = menu;
+    menuAnchor = anchor;
 
     // Position near the anchor (below if it fits, else above), clamped.
     const r = anchor.getBoundingClientRect();
@@ -673,13 +688,25 @@
       menu.style.visibility = '';
     });
 
-    // Outside pointer closes. From out here, a closed shadow's composedPath
-    // stops at the host, so "includes host" means the click was inside our UI.
+    // Outside-pointer handling, two realms (closed shadows FILTER
+    // composedPath at document level — everything inside retargets to the
+    // host — so a single document listener can't tell menu clicks from
+    // panel clicks):
+    //   1. document: a real pointerdown outside our UI closes the menu.
+    //   2. shadow root: sees the UNFILTERED path, so clicks inside our UI
+    //      close the menu unless they hit the menu itself or its anchor
+    //      (the anchor is excluded so the button's click can toggle).
     menuOutside = (e) => {
       if (e.composedPath().includes(host)) return;
       closeMenu();
     };
     document.addEventListener('pointerdown', menuOutside, true);
+    menuOutsideInside = (e) => {
+      const path = e.composedPath();
+      if (path.includes(openMenuEl) || path.includes(menuAnchor)) return;
+      closeMenu();
+    };
+    shadow.addEventListener('pointerdown', menuOutsideInside, true);
 
     menuEscapeOff = ui.onEscape(function menuEscape() {
       if (!openMenuEl) return false;
@@ -704,7 +731,7 @@
       const rect = card.getBoundingClientRect();
       const startX = e.clientX;
       const startY = e.clientY;
-      handle.setPointerCapture(e.pointerId);
+      try { handle.setPointerCapture(e.pointerId); } catch { /* synthetic/lost pointer */ }
       const onMove = (ev) => {
         if (!dragging) return;
         const w = card.offsetWidth;
@@ -716,15 +743,11 @@
         dragging = false;
         window.removeEventListener('pointerup', onUp, true);
         window.removeEventListener('pointercancel', onUp, true);
-        handle.removeEventListener('pointermove', onMove);
-        handle.removeEventListener('pointerup', onUp);
-        handle.removeEventListener('pointercancel', onUp);
+        window.removeEventListener('pointermove', onMove);
       };
       window.addEventListener('pointerup', onUp, true);
       window.addEventListener('pointercancel', onUp, true);
-      handle.addEventListener('pointermove', onMove);
-      handle.addEventListener('pointerup', onUp);
-      handle.addEventListener('pointercancel', onUp);
+      window.addEventListener('pointermove', onMove);
     });
   }
 
@@ -778,6 +801,7 @@
 
     openMenu,
     closeMenu,
+    toggleMenu,
     makeCardDraggable,
   };
 

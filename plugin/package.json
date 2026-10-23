@@ -1,0 +1,7 @@
+{
+  "name": "vite-plugin-dom-review",
+  "version": "1.0.0",
+  "description": "Auto-injects the Widget Review visual code-review UI into a Vite dev server",
+  "type": "module",
+  "main": "index.js"
+}

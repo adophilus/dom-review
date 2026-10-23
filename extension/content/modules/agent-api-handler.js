@@ -14,7 +14,7 @@
 
   const REQUEST_ATTR = 'data-dr-api-request';
   const RESPONSE_ATTR = 'data-dr-api-response';
-  const EVENT_NAME = 'dr-api-request';
+  const EVENT_NAME = window.__WR_API_EVENT || 'dr-api-request';
 
   const VALID_PRIORITIES = ['high', 'medium', 'low'];
   const VALID_CATEGORIES = ['style', 'logic', 'a11y', 'text', 'layout', 'remove', 'add'];
