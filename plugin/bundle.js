@@ -69,16 +69,16 @@ const CHROME_SHIM = String.raw`
 
 const TAKEOVER = String.raw`
 (function(){
-  /* Keep the agent contract owned by this instance when the old DOM Review
-     extension co-resides on localhost: it re-registers window.__domReviewAPI
-     at document_idle, after this script. Re-claim for a few seconds. */
+  /* Keep the agent contract owned by this instance: an old DOM Review
+     extension co-residing on localhost re-registers window.__domReviewAPI
+     at document_idle — which on slow-loading apps can land well after this
+     script. Re-claim forever (1s cadence, no-op when already owned; the
+     interval only matters while an old extension co-resides). */
   var mine = window.__domReviewAPI;
   if (!mine) return;
-  var n = 0;
-  var t = setInterval(function(){
+  setInterval(function(){
     if (window.__domReviewAPI !== mine) window.__domReviewAPI = mine;
-    if (++n >= 50) clearInterval(t);
-  }, 100);
+  }, 1000);
 })();
 `;
 
